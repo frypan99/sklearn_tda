@@ -12,6 +12,12 @@ plt.show()
 
 diags = [D]
 
+DQ = tda.DiagramQuantization(centroids = 2, gamma = 0)
+Q = DQ.fit_transform(diags)
+plt.scatter(Q[0][:,0],Q[0][:,1])
+plt.plot([0.0,10.0],[0.0,10.0])
+plt.show()
+
 LS = tda.Landscape(resolution = 1000)
 L = LS.fit_transform(diags)
 plt.plot(L[0][:1000])
