@@ -1,5 +1,5 @@
 name = "sklearn_tda"
-version__ = 2
+version__ = 0
 
 from .code import PersistenceImage
 from .code import Landscape
@@ -7,6 +7,7 @@ from .code import BettiCurve
 from .code import Silhouette
 from .code import TopologicalVector
 
+from .code import DiagramQuantization
 from .code import DiagramSelector
 from .code import ProminentPoints
 from .code import DiagramPreprocessor
@@ -25,6 +26,7 @@ __all__ = [
     "Silhouette",
     "TopologicalVector",
 
+    "DiagramQuantization",
     "DiagramSelector",
     "ProminentPoints",
     "DiagramPreprocessor",

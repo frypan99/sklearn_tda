@@ -5,10 +5,15 @@ All rights reserved
 
 import sys
 import numpy as np
+import scipy.spatial.distance as sc
 
 from sklearn.base          import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.neighbors     import DistanceMetric
+
+try:
+    import ot
+except ImportError:
+    print("POT not found---DiagramQuantization not available")
 
 try:
     from vectors import *
@@ -16,14 +21,51 @@ try:
     from hera_wasserstein import *
     from hera_bottleneck import *
     USE_CYTHON = True
-
 except ImportError:
     USE_CYTHON = False
-    print("Cython not found--WassersteinDistance not available")
+    print("Cython not found---WassersteinDistance not available")
 
 #############################################
 # Preprocessing #############################
 #############################################
+
+def balanced_kmeans(Y, b, k, t, gamma, max_iter, stop):
+
+    n = Y.shape[0]
+    b = b/np.sum(b)
+    X = Y[np.random.choice(a=n, size=k)]
+    a = 1.0/k * np.ones(k)
+
+    for i in range(max_iter):
+        C = sc.cdist(X,Y)
+        if gamma > 0:
+            P = ot.bregman.sinkhorn(a, b, C, gamma)
+        else:
+            P = ot.emd(a, b, C)
+        new_X = (1 - t) * X + t * k * np.dot(P,Y)
+        e = np.mean(np.linalg.norm(new_X - X, axis=0))
+        if e < stop:
+            break
+        else:
+            X = new_X
+
+    return new_X
+
+class DiagramQuantization(BaseEstimator, TransformerMixin):
+
+    def __init__(self, centroids = 10, learning_rate = 0.1, weight = lambda x: x[1] - x[0], gamma = 0.0, max_iter = 100, stop = 0.01):
+        self.centroids, self.lr, self.weight, self.gamma, self.max_iter, self.stop = centroids, learning_rate, weight, gamma, max_iter, stop
+
+    def fit(self, X, y = None):
+        return self
+
+    def transform(self, X):
+        Xfit = []
+        for i in range(len(X)):
+            diagram = X[i]
+            w = np.array([self.weight(p) for p in diagram])
+            Xfit.append(balanced_kmeans(Y=diagram, b=w, k=self.centroids, t=self.lr, gamma=self.gamma, max_iter=self.max_iter, stop=self.stop))
+        return Xfit
 
 class BirthPersistenceTransform(BaseEstimator, TransformerMixin):
 
@@ -348,7 +390,7 @@ class TopologicalVector(BaseEstimator, TransformerMixin):
             diagram, num_pts_in_diag = X[i], X[i].shape[0]
             pers = 0.5 * np.matmul(diagram, np.array([[-1.0],[1.0]]))
             min_pers = np.minimum(pers,np.transpose(pers))
-            distances = DistanceMetric.get_metric("chebyshev").pairwise(diagram)
+            distances = sc.pdist(diagram, metric="chebyshev")
             vect = np.flip(np.sort(np.triu(np.minimum(distances, min_pers)), axis = None), 0)
             dim = np.minimum(len(vect), self.threshold)
             Xfit[i, :dim] = vect[:dim]
