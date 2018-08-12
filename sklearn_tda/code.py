@@ -30,6 +30,7 @@ except ImportError:
 #############################################
 
 # Method 2
+## Coucou 
 def build_dist_matrix(X,Y):
     C = sc.cdist(X,Y)
     Cxd = (X[:,1] - X[:,0])**2 / 2
