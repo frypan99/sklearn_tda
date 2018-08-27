@@ -12,6 +12,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 try:
     import ot
+
 except ImportError:
     print("POT not found---DiagramQuantization not available")
 
@@ -21,6 +22,7 @@ try:
     from .hera_wasserstein import *
     from .hera_bottleneck import *
     USE_CYTHON = True
+
 except ImportError:
     USE_CYTHON = False
     print("Cython not found---WassersteinDistance not available")
