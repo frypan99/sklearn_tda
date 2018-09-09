@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.spatial.distance as sc
+from sklearn.base import BaseEstimator, TransformerMixin
 
 try:
     import ot
