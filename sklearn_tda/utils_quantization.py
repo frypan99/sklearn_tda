@@ -68,8 +68,8 @@ def balanced_kmeans(Y, b, k, t, gamma, nb_max_iter, stopping_criterion, verbose)
             break
         else:
             X = new_X
-
-    return X, P
+    ### Mathieu: small modif, for now just return the diagram
+    return X #, P
 
 
 def weight_optim(hat_a, hat_b, C, t, gamma, nb_max_iter, stopping_criterion, verbose):

@@ -7,8 +7,8 @@ try:
 except ImportError:
     print("POT not found---DiagramQuantization not available")
 
-from utils_quantization import dist_to_diag, weight_optim, build_dist_matrix, loc_update, balanced_kmeans, greed_init
-import pdiag
+from .utils_quantization import dist_to_diag, weight_optim, build_dist_matrix, loc_update, balanced_kmeans, greed_init
+from .pdiag import *
 
 #############################################
 # Quantization ##############################
@@ -53,12 +53,12 @@ def kmeans_quantize(Y, k, weight_update=False, gamma=0.,
     n = Y.shape[0]
     assert (Y.shape[1] == 2)
 
-    b = 1/(2 * n) * np.ones(n)  # weight vector of the input diagram. Uniform here.
+    b = 1.0/(2 * n) * np.ones(n)  # weight vector of the input diagram. Uniform here.
     hat_b = np.append(b, 0.5)  # so that we have a probability measure
 
     X = greed_init(Y, n, k)
 
-    a = 1/(2 * k) * np.ones(k)  # Uniform initialization of weight
+    a = 1.0/(2 * k) * np.ones(k)  # Uniform initialization of weight
     hat_a = np.append(a , 0.5)  # so that we have a probability measure
 
     for i in range(nb_max_iter):
@@ -80,11 +80,12 @@ def kmeans_quantize(Y, k, weight_update=False, gamma=0.,
 
     if verbose:
         print("nb iter done:", i+1)
-   
-    if weight_update:
-        return new_X, P, 2*n * hat_a[:k]
 
-    return new_X, P
+    ### Mathieu: small modif, for now just return the diagram   
+    if weight_update:
+        return new_X #, P, 2*n * hat_a[:k]
+
+    return new_X #, P
 
 
 ### Mathieu's code ###
