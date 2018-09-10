@@ -20,9 +20,10 @@ __all__ = [
     "DiagramPreprocessor",
     "BirthPersistenceTransform",
 
-    "SlicedWasserstein",
-    "PersistenceWeightedGaussian",
-    "PersistenceScaleSpace",
+    "SlicedWassersteinKernel",
+    "PersistenceWeightedGaussianKernel",
+    "PersistenceScaleSpaceKernel",
 
-    "WassersteinDistance"
+    "WassersteinDistance",
+    "SlicedWassersteinDistance"
 ]
