@@ -1,6 +1,6 @@
 # sklearn_tda: a scikit-learn compatible python package for Machine Learning and TDA
 
-**Author**: Mathieu Carrière.
+**Author**: Mathieu Carriere.
 
 # Description
 
@@ -31,8 +31,10 @@ Currently available classes are:
     | **name** | **description** |
     | --- | --- |
     | **use** = False|     whether to use the class or not. |
-    | **num_pts** = 10|  number of points to keep in each diagram (ordered by persistence). |
-    | **threshold** = -1|  points with distance-to-diagonal smaller than this parameter will be removed. |
+    | **num_pts** = 10|    cardinality threshold (points are ordered by persistence). |
+    | **threshold** = -1|  distance-to-diagonal threshold. |
+    | **point_type** = "upper"|  whether to keep the points above ("upper") or below ("lower") the aforementioned thresholds. |
+    
 
   * **DiagramSelector**: returns the finite or essential points of the diagrams.
 
@@ -100,7 +102,7 @@ Currently available classes are:
 
 Currently available classes are:
 
-  * **PersistenceScaleSpace**: implementation of [persistence scale space kernel](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Reininghaus_A_Stable_Multi-Scale_2015_CVPR_paper.pdf).
+  * **PersistenceScaleSpace**: implementation of [persistence scale space kernel](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Reininghaus_A_Stable_Multi-Scale_2015_CVPR_paper.pdf). **Requires cython!!**
 
     Parameters:
 
@@ -108,7 +110,7 @@ Currently available classes are:
     | --- | --- |
     |**bandwidth** = 1.0| bandwidth of kernel.|
 
-  * **PersistenceWeightedGaussian**: implementation of [persistence weighted gaussian kernel](http://proceedings.mlr.press/v48/kusano16.html).
+  * **PersistenceWeightedGaussian**: implementation of [persistence weighted gaussian kernel](http://proceedings.mlr.press/v48/kusano16.html). **Requires cython!!**
 
     Parameters:
 
@@ -118,7 +120,7 @@ Currently available classes are:
     |**weight** = lambda x: 1| weight on diagram points. It is a python function.|
     |**use_pss** = False| whether to add symmetric of points from the diagonal.|
 
-  * **SlicedWasserstein**: implementation of [sliced Wasserstein kernel](http://proceedings.mlr.press/v70/carriere17a.html).
+  * **SlicedWasserstein**: implementation of [sliced Wasserstein kernel](http://proceedings.mlr.press/v70/carriere17a.html). **Requires cython!!**
 
     Parameters:
 
@@ -139,6 +141,14 @@ Currently available classes are:
     | --- | --- |
     |**wasserstein** = 1| index of Wasserstein distance. Set to np.inf for bottleneck distance.|
     |**delta** = 0.001| approximation error.|
+
+  * **SlicedWassersteinDistance**: implementation of [sliced Wasserstein distance](http://proceedings.mlr.press/v70/carriere17a.html). **Requires cython!!**
+
+    Parameters:
+
+    | **name** | **description** |
+    | --- | --- |
+    |**num_directions** = 10| number of directions.|
 
 # Installing sklearn_tda
 

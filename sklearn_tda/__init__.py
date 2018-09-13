@@ -1,23 +1,11 @@
 name = "sklearn_tda"
 version__ = 0
 
-from .code import PersistenceImage
-from .code import Landscape
-from .code import BettiCurve
-from .code import Silhouette
-from .code import TopologicalVector
-
-from .code import DiagramQuantization
-from .code import DiagramSelector
-from .code import ProminentPoints
-from .code import DiagramPreprocessor
-from .code import BirthPersistenceTransform
-
-from .code import SlicedWasserstein
-from .code import PersistenceWeightedGaussian
-from .code import PersistenceScaleSpace
-
-from .code import WassersteinDistance
+from .preprocessing import *
+from .kernel_methods import *
+from .vector_methods import *
+from .metrics import *
+from .quantization import *
 
 __all__ = [
     "PersistenceImage",
@@ -32,9 +20,10 @@ __all__ = [
     "DiagramPreprocessor",
     "BirthPersistenceTransform",
 
-    "SlicedWasserstein",
-    "PersistenceWeightedGaussian",
-    "PersistenceScaleSpace",
+    "SlicedWassersteinKernel",
+    "PersistenceWeightedGaussianKernel",
+    "PersistenceScaleSpaceKernel",
 
-    "WassersteinDistance"
+    "WassersteinDistance",
+    "SlicedWassersteinDistance"
 ]
