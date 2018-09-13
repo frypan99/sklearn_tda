@@ -29,10 +29,10 @@ except ImportError:
 # Preprocessing #############################
 #############################################
 
-# Method 2
-## Coucou 
+# Utils quantization
+
 def build_dist_matrix(X,Y):
-    C = sc.cdist(X,Y)
+    C = sc.cdist(X,Y)**2
     Cxd = (X[:,1] - X[:,0])**2 / 2
     Cf = np.hstack((C, Cxd[:,None]))
     Cdy = (Y[:,1] - Y[:,0])**2 / 2
@@ -40,62 +40,100 @@ def build_dist_matrix(X,Y):
     Cf = np.vstack((Cf, Cdy[None,:]))
     return Cf
 
-def loc_update(a, Y, P):
+def loc_update(hat_a, hat_b, Y, C, gamma):
+    k = len(hat_a) - 1
+    a = hat_a[:k]
+
+    if gamma > 0:
+        P = ot.bregman.sinkhorn(hat_a, hat_b, C, gamma)
+    else:
+        P = ot.emd(hat_a, hat_b, C)
+
     k= P.shape[0] -1
     n = P.shape[1] -1
     Pxy = P[:k,:n]
     new_X = np.divide(Pxy.dot(Y), a[:,None])
 
-    Y_mean = (Y[:,0] + Y[:,1]) / 2
-    t = 1.0/np.sum(Pxy, axis=1) - 1.0/a
+    Y_mean = (Y[:,0] + Y[:,1]) / 2.
+
+    t = 1./np.sum(Pxy, axis=1) - 1./a
     new_X = new_X + np.multiply(t, Pxy.dot(Y_mean))[:,None]
 
     return new_X
 
-def kmeans_quantize(Y, k, gamma, nb_max_iter, stopping_criterion):
+def weight_optim(hat_a, hat_b, C, t, gamma, max_iter, stop, verbose):
+    k = len(hat_a) - 1
+
+    for i in range(max_iter):
+        if gamma > 0:
+            dico = ot.bregman.sinkhorn(hat_a, hat_b, C, gamma, log=True)[1]
+        else:
+            dico = ot.emd(hat_a, hat_b, C, log=True)[1]
+        
+        alpha = dico['u'][:k]
+        a = hat_a[:k]
+        new_a = np.multiply(a, np.exp(- t * alpha))
+        new_a = new_a/(2 * np.sum(new_a))
+
+        e = np.mean(np.abs(new_a - a))
+
+        if e < stop:
+            break
+        else:
+            hat_a = np.append(new_a, 0.5)
+
+    return hat_a
+
+
+### Methods quantization
+
+def kmeans_quantize(Y, k, t, gamma, max_iter, stop):
+
     n = Y.shape[0]
-    b = 1.0/(2 * n) * np.ones(n)
+    b = 1./(2 * n) * np.ones(n)
     hat_b = np.append(b, 0.5)
 
-    X = Y[np.random.choice(n, k)]
-    a = 1.0/(2 * k) * np.ones(k)
-    hat_a = np.append(a, 0.5)
+    X = greed_init(Y, n, k)
 
-    for i in range(nb_max_iter):
+    a = 1./(2 * k) * np.ones(k)
+    hat_a = np.append(a , 0.5)
 
+    for i in range(max_iter):
         C = build_dist_matrix(X,Y)
 
-        if gamma > 0:
-            P = ot.bregman.sinkhorn(hat_a, hat_b, C, gamma)
-        else:
-            P = ot.emd(hat_a, hat_b, C)
+        new_X = loc_update(hat_a, hat_b, Y, C, gamma)
 
-        new_X = loc_update(a, Y, P)
-
-        e = np.mean(np.linalg.norm(new_X - X, axis=0))
-        if e < stopping_criterion:
+        diff = np.linalg.norm(new_X - X, axis=1)
+        diff = diff[~np.isnan(diff)]
+        e = np.max(diff)
+        if e < stop:
             break
         else:
             X = new_X
 
+        if weight_update:
+            hat_a = weight_optim(hat_a, hat_b, C, t, gamma, max_iter, stop, verbose)
+   
+    if weight_update:
+        new_X = np.vstack(new_X, 2. * n * hat_a[:k])
+
     return new_X
 
 
-# Method 1
 def balanced_quantize(Y, k, b, t, gamma, max_iter, stop):
     n = Y.shape[0]
-    b = b*1.0/np.sum(b)
-    X = Y[np.random.choice(n, k)]
-    a = 1.0/k * np.ones(k)
+    b = b/np.sum(b)
+    X = greed_init(Y, n, k)
+    a = 1./k * np.ones(k)
 
     for i in range(max_iter):
-        C = sc.cdist(X,Y)
+        C = sc.cdist(X,Y)**2
         if gamma > 0:
             P = ot.bregman.sinkhorn(a, b, C, gamma)
         else:
             P = ot.emd(a, b, C)
         new_X = (1 - t) * X + t * k * np.dot(P,Y)
-        e = np.mean(np.linalg.norm(new_X - X, axis=0))
+        e = np.linalg.norm(new_X - X)
         if e < stop:
             break
         else:
@@ -106,8 +144,8 @@ def balanced_quantize(Y, k, b, t, gamma, max_iter, stop):
 
 class DiagramQuantization(BaseEstimator, TransformerMixin):
 
-    def __init__(self, centroids = 10, learning_rate = 0.1, weight = lambda x: x[1] - x[0], gamma = 0.0, max_iter = 100, stop = 0.01):
-        self.centroids, self.lr, self.weight, self.gamma, self.max_iter, self.stop = centroids, learning_rate, weight, gamma, max_iter, stop
+    def __init__(self, method='balanced', centroids = 10, learning_rate = 0.1, weight = lambda x: x[1] - x[0], gamma = 0., max_iter = 100, stop = 0.01):
+        self.method, self.centroids, self.lr, self.weight, self.gamma, self.max_iter, self.stop = method, centroids, learning_rate, weight, gamma, max_iter, stop
 
     def fit(self, X, y = None):
         return self
@@ -116,10 +154,14 @@ class DiagramQuantization(BaseEstimator, TransformerMixin):
         Xfit = []
         for i in range(len(X)):
             diagram = X[i]
-            w = np.array([self.weight(p) for p in diagram])
-            Xfit.append(balanced_quantize(Y=diagram, b=w, k=self.centroids, t=self.lr, gamma=self.gamma, max_iter=self.max_iter, stop=self.stop))
-            #Xfit.append(kmeans_quantize(Y=diagram, k=self.centroids, gamma=self.gamma, nb_max_iter=self.max_iter, stopping_criterion=self.stop))
+            if self.mehtod=='balanced':
+                w = np.array([self.weight(p) for p in diagram])
+                Xfit.append(balanced_quantize(Y=diagram, b=w, k=self.centroids, t=self.lr, gamma=self.gamma, max_iter=self.max_iter, stop=self.stop))
+            elif self.method=='kmeans':
+                Xfit.append(kmeans_quantize(Y=diagram, k=self.centroids, t=self.lr, gamma=self.gamma, max_iter=self.max_iter, stop=self.stop))
         return Xfit
+
+### Methods
 
 class BirthPersistenceTransform(BaseEstimator, TransformerMixin):
 
